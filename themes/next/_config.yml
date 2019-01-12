@@ -145,11 +145,6 @@ menu:
   #schedule: /schedule/ || calendar
   #sitemap: /sitemap.xml || sitemap
   #commonweal: /404/ || heartbeat
-  Docs:
-    default: /docs/ || book
-    Third Party Services:
-      default: /third-party-services/ || plug
-      Algolia Search: /algolia-search/ || adn
 # Enable/Disable menu icons / item badges.
 menu_settings:
   icons: true
