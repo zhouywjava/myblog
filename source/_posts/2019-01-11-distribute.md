@@ -2,7 +2,8 @@
 title: 转：什么是分布式系统
 date: 2019-01-11 09:52:02
 updated: 
-tags: 分布式
+tags: 
+- 分布式
 comments: true
 categories: 
 - Java架构
