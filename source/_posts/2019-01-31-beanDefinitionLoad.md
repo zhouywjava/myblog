@@ -29,8 +29,7 @@ public int loadBeanDefinitions(String location, @Nullable Set<Resource> actualRe
 XmlBeanDefinitionReader.loadBeanDefinitions()
 XmlBeanDefinitionReader.doLoadBeanDefinitions()
 XmlBeanDefinitionReader.registerBeanDefinitions(Document doc, Resource resource)
-DefaultBeanDefinitionDocumentReader.doRegisterBeanDefinitions(Element root)
-{% codeblock DefaultBeanDefinitionDocumentReader.doRegisterBeanDefinitions(Element root) lang:java %}
+{% codeblock XmlBeanDefinitionReader.registerBeanDefinitions(Document doc, Resource resource) lang:java %}
     public int registerBeanDefinitions(Document doc, Resource resource) throws BeanDefinitionStoreException {
 		BeanDefinitionDocumentReader documentReader = createBeanDefinitionDocumentReader();
 		int countBefore = getRegistry().getBeanDefinitionCount();
@@ -43,6 +42,8 @@ DefaultBeanDefinitionDocumentReader.doRegisterBeanDefinitions(Element root)
         Element root = doc.getDocumentElement();
         doRegisterBeanDefinitions(root);
     }
+{% endcodeblock %}
+{% codeblock DefaultBeanDefinitionDocumentReader.doRegisterBeanDefinitions(Element root) lang:java %}
     protected void doRegisterBeanDefinitions(Element root) {
         BeanDefinitionParserDelegate parent = this.delegate;
         this.delegate = createDelegate(getReaderContext(), root, parent);
