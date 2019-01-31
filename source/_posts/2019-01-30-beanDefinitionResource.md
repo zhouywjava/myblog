@@ -1,6 +1,6 @@
 ---
 title: 读书笔记：beanDefinition的resource定位
-date: 2019-01-23 09:13:05
+date: 2019-01-30 09:13:05
 tags: 
 - framework
 - spring ioc
@@ -13,7 +13,7 @@ categories:
 spring ioc 的原理将beanDefinition 的定位，载入，解析分为三部分。本篇选取FileSystemXmlApplicationContext 的源码实现来分析下如何实现beanDefinition的定位。
 <!--more-->
 spring ioc 的设计分为两部分。一部分是基于interface （代表接口：BeanFactory,ApplicationContext），规范了IOC容器应该具备的功能。另一部分是基于Abstract (代表抽象类：AbstractBeanFactory,AbstractApplicationContext)。
-抽象类会实现interface 的全部方法。基本上是按照interface 定义容器，abstract 实现容器的结构进行的。FileSystemXmlApplicationContext 是针对使用场景，对抽象类的具体扩展。源码中除了构造器，就是两个特有的方法，如下：
+抽象类会实现interface 的部分方法,然后还会调用interface的部分方法，这也是一种模板模式。FileSystemXmlApplicationContext 是针对使用场景，对抽象类的具体扩展。源码中除了构造器，就是两个特有的方法，如下：
 
 
 {% codeblock FileSystemXmlApplicationContext  lang:java %}
