@@ -478,7 +478,16 @@ getInstantiationStrategy().instantiate() 使用的是SimpleInstantiationStrategy
         //解析原值
         Object resolvedValue = valueResolver.resolveValueIfNecessary(pv, originalValue);
         ...
-        
+        try {
+            //BeanWraper完成Bean的属性注入
+            //最后调用AbstractNestablePropertyAccessor.setPropertyValue(PropertyTokenHolder tokens, PropertyValue pv)方法,进行属性的注入
+            bw.setPropertyValues(new MutablePropertyValues(deepCopy));
+        }
+        catch (BeansException ex) {
+            throw new BeanCreationException(
+                    mbd.getResourceDescription(), beanName, "Error setting property values", ex);
+        }
+        ...
     }
 {% endcodeblock %}
 关于BeanDefinitionValueResolver类型解析，我们可以针对某一个类型具体看看，比例list类型
@@ -493,4 +502,131 @@ getInstantiationStrategy().instantiate() 使用的是SimpleInstantiationStrategy
 		return resolved;
 	}
 {% endcodeblock %}
-具体看看resolveValueIfNecessary 方法,是一个底层解析方法。
+具体看看resolveValueIfNecessary 方法,是一个底层解析方法。如果是容器中的其他引用，则解析为bean。如果是propertyValue 则返回值，这些值可以是：
+1.beanDefinition
+2.RuntimeBeanReference
+3.ManagedList
+4.ManagedSet
+5.ManagedMap 
+6.Object or null
+{% codeblock BeanDefinitionValueResolver.resolveValueIfNecessary() lang:java %}
+    public Object resolveValueIfNecessary(Object argName, @Nullable Object value) {
+		// We must check each value to see whether it requires a runtime reference
+		// to another bean to be resolved.
+		//这里对RuntimeBeanReference 进行解析
+		if (value instanceof RuntimeBeanReference) {
+			RuntimeBeanReference ref = (RuntimeBeanReference) value;
+			return resolveReference(argName, ref);
+		}
+		else if (value instanceof RuntimeBeanNameReference) {
+			String refName = ((RuntimeBeanNameReference) value).getBeanName();
+			refName = String.valueOf(doEvaluate(refName));
+			if (!this.beanFactory.containsBean(refName)) {
+				throw new BeanDefinitionStoreException(
+						"Invalid bean name '" + refName + "' in bean reference for " + argName);
+			}
+			return refName;
+		}
+		else if (value instanceof BeanDefinitionHolder) {
+			// Resolve BeanDefinitionHolder: contains BeanDefinition with name and aliases.
+			BeanDefinitionHolder bdHolder = (BeanDefinitionHolder) value;
+			return resolveInnerBean(argName, bdHolder.getBeanName(), bdHolder.getBeanDefinition());
+		}
+		else if (value instanceof BeanDefinition) {
+			// Resolve plain BeanDefinition, without contained name: use dummy name.
+			BeanDefinition bd = (BeanDefinition) value;
+			String innerBeanName = "(inner bean)" + BeanFactoryUtils.GENERATED_BEAN_NAME_SEPARATOR +
+					ObjectUtils.getIdentityHexString(bd);
+			return resolveInnerBean(argName, innerBeanName, bd);
+		}
+		//这里对ManaagedArray进行解析
+		else if (value instanceof ManagedArray) {
+			// May need to resolve contained runtime references.
+			ManagedArray array = (ManagedArray) value;
+			//解析出元素类型
+			Class<?> elementType = array.resolvedElementType;
+			if (elementType == null) {
+				String elementTypeName = array.getElementTypeName();
+				if (StringUtils.hasText(elementTypeName)) {
+					try {
+						elementType = ClassUtils.forName(elementTypeName, this.beanFactory.getBeanClassLoader());
+						array.resolvedElementType = elementType;
+					}
+					catch (Throwable ex) {
+						// Improve the message by showing the context.
+						throw new BeanCreationException(
+								this.beanDefinition.getResourceDescription(), this.beanName,
+								"Error resolving array type for " + argName, ex);
+					}
+				}
+				else {
+					elementType = Object.class;
+				}
+			}
+			return resolveManagedArray(argName, (List<?>) value, elementType);
+		}
+		else if (value instanceof ManagedList) {
+			// May need to resolve contained runtime references.
+			return resolveManagedList(argName, (List<?>) value);
+		}
+		else if (value instanceof ManagedSet) {
+			// May need to resolve contained runtime references.
+			return resolveManagedSet(argName, (Set<?>) value);
+		}
+		else if (value instanceof ManagedMap) {
+			// May need to resolve contained runtime references.
+			return resolveManagedMap(argName, (Map<?, ?>) value);
+		}
+		else if (value instanceof ManagedProperties) {
+			Properties original = (Properties) value;
+			Properties copy = new Properties();
+			original.forEach((propKey, propValue) -> {
+				if (propKey instanceof TypedStringValue) {
+					propKey = evaluate((TypedStringValue) propKey);
+				}
+				if (propValue instanceof TypedStringValue) {
+					propValue = evaluate((TypedStringValue) propValue);
+				}
+				if (propKey == null || propValue == null) {
+					throw new BeanCreationException(
+							this.beanDefinition.getResourceDescription(), this.beanName,
+							"Error converting Properties key/value pair for " + argName + ": resolved to null");
+				}
+				copy.put(propKey, propValue);
+			});
+			return copy;
+		}
+		else if (value instanceof TypedStringValue) {
+			// Convert value to target type here.
+			TypedStringValue typedStringValue = (TypedStringValue) value;
+			Object valueObject = evaluate(typedStringValue);
+			try {
+				Class<?> resolvedTargetType = resolveTargetType(typedStringValue);
+				if (resolvedTargetType != null) {
+					return this.typeConverter.convertIfNecessary(valueObject, resolvedTargetType);
+				}
+				else {
+					return valueObject;
+				}
+			}
+			catch (Throwable ex) {
+				// Improve the message by showing the context.
+				throw new BeanCreationException(
+						this.beanDefinition.getResourceDescription(), this.beanName,
+						"Error converting typed String value for " + argName, ex);
+			}
+		}
+		else if (value instanceof NullBean) {
+			return null;
+		}
+		else {
+			return evaluate(value);
+		}
+	}
+{% endcodeblock %}
+1.resolveReference() ，从RuntimeBeanReference 取得reference的名字。
+2.如果reference是再双亲IoC容器中，那么就到双亲IoC容器中取获取。
+3.再当前IoC容器中获得Bean，会触发getBean的过程。
+4.resolveManagedList 再对manageList处理的过程中，通过递归的方式，对List的元素进行解析。
+END
+
