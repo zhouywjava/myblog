@@ -281,5 +281,5 @@ Bean的销毁：
 		}
 	}
 {% endcodeblock %}
-说明：DisposableBean接口提供了destroy()方法。 实现DisposableBean接口的类，在类销毁时，会调用destroy()方法，开发人员可以重新该方法完成自己的工作。 
+说明：在spring容器初始化bean和销毁bean的以前的操作有很多种，一种是在xml中定义的时候用init-method和destory-method，还有一种就是定义bean的时候实现DisposableBean和InitializingBean 这两个接口，还有一种是在指定方法上加上@PostConstruct或@PreDestroy注解来制定该方法是在初始化之后还是销毁之前调用。
 END
