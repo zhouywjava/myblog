@@ -1,5 +1,5 @@
 ---
-title: 读书笔记：beanDefinition 依赖注入
+title: 读书笔记：applicationContext 与 bean 初始化销毁的过程
 date: 2019-02-13 13:59:01
 tags: 
 - framework
