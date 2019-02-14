@@ -242,7 +242,7 @@ createBean() 是在AbstractAutowireCapableBeanFactory 中实现的。
 	}
 {% endcodeblock %}
 
-AbstractAutowireCapableBeanFactory.doCreateBean()方法
+AbstractAutowireCapableBeanFactory.doCreateBean()方法,注意这个是一个关键方法，里面包含了bean的载入，解析，初始化前，初始化，初始化后，注册的实现
 {% codeblock AbstractAutowireCapableBeanFactory.doCreateBean() lang:java %}
     protected Object doCreateBean(final String beanName, final RootBeanDefinition mbd, final @Nullable Object[] args)
     			throws BeanCreationException {
